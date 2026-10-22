@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Match the npm `min-release-age=2` policy: don't install anything published in the last 2 days.
+minimumReleaseAge: 2880
+
+# esbuild's install script only verifies its platform binary.
+allowBuilds:
+  esbuild: true
