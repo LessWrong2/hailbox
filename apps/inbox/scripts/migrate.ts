@@ -40,6 +40,16 @@ export async function runMigrations(url = databaseUrl()) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  // Locally, use the same env files `next dev` reads (e.g. from `vercel env pull .env.local`).
+  if (!process.env.VERCEL) {
+    for (const file of ['.env.local', '.env']) {
+      try {
+        process.loadEnvFile(fileURLToPath(new URL(`../${file}`, import.meta.url)));
+      } catch {
+        // No such file.
+      }
+    }
+  }
   const vercelEnv = process.env.VERCEL_ENV;
   // Preview builds may share production's database; a PR's migration shouldn't run against it.
   // With per-preview database branches (e.g. Neon's integration), set HAILBOX_MIGRATE_PREVIEWS=1.

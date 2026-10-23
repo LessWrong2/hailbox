@@ -14,7 +14,8 @@ export function databaseUrl(): string {
 }
 
 export function redisUrl(): string | undefined {
-  return process.env.REDIS_URL || undefined;
+  // Redis Cloud's Vercel integration sets REDIS_URL; Upstash's sets KV_URL.
+  return process.env.REDIS_URL || process.env.KV_URL || undefined;
 }
 
 export function inboxUrl(): string {

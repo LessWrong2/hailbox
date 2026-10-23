@@ -16,5 +16,9 @@
   "devDependencies": {
     "@playwright/test": "^1.56.0",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@neon/config": "^1.9.3",
+    "@neon/env": "^1.6.4"
   }
 }
