@@ -13,9 +13,12 @@ export function databaseUrl(): string {
   return process.env.DATABASE_URL || 'postgres://localhost/hailbox';
 }
 
-export function redisUrl(): string | undefined {
-  // Redis Cloud's Vercel integration sets REDIS_URL; Upstash's sets KV_URL.
-  return process.env.REDIS_URL || process.env.KV_URL || undefined;
+/**
+ * For the realtime broker's LISTEN connection, which doesn't work through a transaction-mode
+ * pooler. Neon's Vercel integration sets DATABASE_URL_UNPOOLED alongside the pooled DATABASE_URL.
+ */
+export function directDatabaseUrl(): string {
+  return process.env.DATABASE_URL_UNPOOLED || databaseUrl();
 }
 
 export function inboxUrl(): string {

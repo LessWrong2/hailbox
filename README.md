@@ -12,20 +12,21 @@ answering them. Think a small, self-hosted Intercom for Next.js sites on Vercel.
 - **Email notifications** via Mailgun, if the visitor leaves an address and hasn't seen a reply
   within a minute.
 - **Slack forwarding**: one thread per conversation, including your team's replies.
-- **Realtime** over Vercel's WebSocket support, with Redis fanning events out across instances.
+- **Realtime** over Vercel's WebSocket support, with Postgres `LISTEN`/`NOTIFY` fanning events out
+  across instances.
 
 ## Layout
 
 ```
 packages/hailbox   The widget (React), plus hailbox/protocol (wire types) and hailbox/client (headless API client)
-apps/inbox         Operator inbox + API + WebSockets (Next.js, Postgres via Drizzle, Redis)
+apps/inbox         Operator inbox + API + WebSockets (Next.js, Postgres via Drizzle)
 apps/demo          A stand-in "customer site" that embeds the widget
 e2e                Playwright tests that drive the demo and the inbox together
 ```
 
 ## Local development
 
-You need Node 20+, pnpm, and a local Postgres server. Redis is optional locally.
+You need Node 20+, pnpm, and a local Postgres server.
 
 ```sh
 pnpm install
@@ -88,10 +89,10 @@ the headless client.
    `apps/inbox`. `apps/inbox/vercel.json` builds the widget package, applies database
    migrations, and builds the app. Migrations run only for production deploys, unless you set
    `HAILBOX_MIGRATE_PREVIEWS=1` because each preview has its own database branch.
-2. **Add storage** from the Vercel Marketplace and connect it to the project:
-   - **Postgres** (e.g. Neon). This sets `DATABASE_URL`.
-   - **Redis** (Redis Cloud, or Upstash with its `rediss://` URL). Set `REDIS_URL`. Without it,
-     a reply only reaches visitors whose socket happens to be on the same function instance.
+2. **Add Postgres** (e.g. Neon) from the Vercel Marketplace and connect it to the project. This
+   sets `DATABASE_URL`. Realtime updates also need a direct connection, because `LISTEN` doesn't
+   work through a connection pooler. Neon's integration sets `DATABASE_URL_UNPOOLED` for this. With
+   another provider, set `DATABASE_URL_UNPOOLED` yourself if `DATABASE_URL` is pooled.
 3. **Set environment variables** (all are listed in `apps/inbox/.env.example`):
    - `HAILBOX_SECRET`: a long random string (`openssl rand -base64 32`).
    - `OPERATOR_EMAILS`: comma-separated addresses allowed to sign in.
@@ -130,8 +131,13 @@ WebSocket routes set `maxDuration = 300` (the Hobby maximum). On Pro you can rai
 - **Ordering.** Posting a message locks the conversation row first, so message ids within a
   conversation commit in order and `after=<id>` is a safe cursor.
 - **Fan-out.** Vercel pins each socket to the instance that accepted it. Whoever handles a
-  write publishes to Redis (`hailbox:visitor:<id>`, `hailbox:inbox`), and every instance
-  forwards matching events to its own sockets.
+  write delivers the event to its own sockets and sends it with Postgres `NOTIFY`. Every
+  instance with open sockets holds one direct connection that `LISTEN`s and forwards events to
+  its own sockets. A frame too big for `NOTIFY` (8000 bytes, which a long message can exceed)
+  reaches other instances as `ready`, which makes their clients re-fetch. If a listening
+  connection drops, it reconnects and sends `ready` too. That includes Neon scaling the database
+  to zero; reconnecting wakes it, so with sockets open it rarely stays asleep for long, and you
+  may prefer to turn scale-to-zero off.
 - **Email notifications** are scheduled with `waitUntil` after an operator replies. After
   `NOTIFY_DELAY_SECONDS` (default 60) the inbox checks whether the visitor has read the reply.
   If not, it emails all unread replies in one message. A burst of replies produces one email,
