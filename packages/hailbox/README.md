@@ -3,8 +3,12 @@
 A chat widget for talking with your site's visitors. It pairs with a self-hosted Hailbox inbox,
 where your team answers. See the [main README](../../README.md) for deploying the inbox.
 
-```sh
-pnpm add hailbox
+Releases are published on [GitHub](https://github.com/LessWrong2/hailbox/releases) rather than
+npm. Add the latest release's tarball to your `package.json` dependencies (each release's notes
+have the exact line), then install:
+
+```json
+"hailbox": "https://github.com/LessWrong2/hailbox/releases/download/v0.1.0/hailbox-0.1.0.tgz"
 ```
 
 ```tsx

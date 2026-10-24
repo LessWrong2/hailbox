@@ -21,6 +21,11 @@ export const widgetCss = /* css */ `
 }
 :where(.hb) *, :where(.hb) *::before, :where(.hb) *::after { box-sizing: border-box; }
 
+/* Lets accent colors given as light-dark(...) resolve; :host's "all: initial" resets it. */
+.hb[data-scheme="light"] { color-scheme: light; }
+.hb[data-scheme="dark"] { color-scheme: dark; }
+.hb[data-scheme="auto"] { color-scheme: light dark; }
+
 .hb[data-scheme="dark"] {
   --hb-bg: #16181d;
   --hb-fg: #f3f4f6;
@@ -54,8 +59,8 @@ export const widgetCss = /* css */ `
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border: none;
   border-radius: 50%;
   background: var(--hb-accent);
@@ -68,7 +73,7 @@ export const widgetCss = /* css */ `
 }
 .hb-launcher:hover { transform: scale(1.06); }
 .hb-launcher:active { transform: scale(0.96); }
-.hb-launcher svg { width: 26px; height: 26px; }
+.hb-launcher svg { width: 24px; height: 24px; }
 .hb[data-position="left"] .hb-launcher { right: auto; left: 20px; }
 
 .hb-badge {
@@ -91,7 +96,7 @@ export const widgetCss = /* css */ `
 /* Unread preview, shown next to the launcher when a reply arrived while the panel was closed */
 .hb-preview {
   position: fixed;
-  bottom: 88px;
+  bottom: 80px;
   right: 20px;
   width: min(300px, calc(100vw - 40px));
   padding: 12px 36px 12px 14px;
@@ -133,7 +138,7 @@ export const widgetCss = /* css */ `
 /* Panel */
 .hb-panel {
   position: fixed;
-  bottom: 88px;
+  bottom: 80px;
   right: 20px;
   width: 370px;
   height: min(600px, calc(100vh - 120px));

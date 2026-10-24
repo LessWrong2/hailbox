@@ -3,7 +3,7 @@
 An embeddable chat widget for talking with your site's visitors, plus a self-hosted inbox for
 answering them. Think a small, self-hosted Intercom for Next.js sites on Vercel.
 
-- **Widget** (`hailbox` on npm): a floating button that opens a chat panel. Drop `<Hailbox />`
+- **Widget** (`hailbox`, published as GitHub releases): a floating button that opens a chat panel. Drop `<Hailbox />`
   into your app's layout.
 - **Inbox** (`apps/inbox`): a separate Next.js app on Vercel, where your team signs in and replies.
   It also hosts the API the widget talks to.
@@ -54,8 +54,12 @@ pnpm test:e2e    # Playwright: a visitor and an operator chatting in real browse
 
 ## Adding the widget to a site
 
-```sh
-pnpm add hailbox
+The widget is published as a GitHub release rather than to npm. Add the tarball of the
+[latest release](https://github.com/LessWrong2/hailbox/releases/latest) to your `package.json`
+dependencies (its release notes have the exact line), then install:
+
+```json
+"hailbox": "https://github.com/LessWrong2/hailbox/releases/download/v0.1.0/hailbox-0.1.0.tgz"
 ```
 
 ```tsx
@@ -82,6 +86,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 `<Hailbox />` is a client component, so you can render it from a server layout. See
 [packages/hailbox/README.md](packages/hailbox/README.md) for all props, `openHailbox()`, and
 the headless client.
+
+### Releasing the widget
+
+Every merge to `main` that touches `packages/hailbox` publishes a release automatically
+(`.github/workflows/release-widget.yml`): it typechecks, tests and builds the widget, then
+attaches the packed tarball to a new release tagged with the next patch version. To start a new
+minor or major series, raise the version in `packages/hailbox/package.json`; the next release
+uses it as-is. Sites upgrade by pointing their dependency at the new release's URL.
 
 ## Deploying the inbox to Vercel
 
