@@ -42,18 +42,38 @@ export interface HailboxProps {
 const OPEN_EVENT = 'hailbox:open';
 const CLOSE_EVENT = 'hailbox:close';
 const TOGGLE_EVENT = 'hailbox:toggle';
+const SEND_EVENT = 'hailbox:send';
 
-/** Opens the chat panel of the mounted <Hailbox /> (e.g. from a "Contact us" link). */
-export function openHailbox(): void {
-  window.dispatchEvent(new Event(OPEN_EVENT));
+/**
+ * Sends a command to the mounted widget, which marks the event handled by cancelling it.
+ * Returns false when no widget is mounted to handle it.
+ */
+function command(type: string, detail?: string): boolean {
+  return !window.dispatchEvent(new CustomEvent(type, { detail, cancelable: true }));
 }
 
-export function closeHailbox(): void {
-  window.dispatchEvent(new Event(CLOSE_EVENT));
+/**
+ * Opens the chat panel of the mounted <Hailbox /> (e.g. from a "Contact us" link).
+ * Returns false if no <Hailbox /> is mounted.
+ */
+export function openHailbox(): boolean {
+  return command(OPEN_EVENT);
 }
 
-export function toggleHailbox(): void {
-  window.dispatchEvent(new Event(TOGGLE_EVENT));
+export function closeHailbox(): boolean {
+  return command(CLOSE_EVENT);
+}
+
+export function toggleHailbox(): boolean {
+  return command(TOGGLE_EVENT);
+}
+
+/**
+ * Opens the chat panel and sends `body` as a message from the visitor, e.g. a request your own
+ * UI composed for them. Returns false, and sends nothing, if no <Hailbox /> is mounted.
+ */
+export function sendHailboxMessage(body: string): boolean {
+  return command(SEND_EVENT, body);
 }
 
 /**
@@ -101,20 +121,38 @@ function Widget({
   const [dismissedPreviewId, setDismissedPreviewId] = useState<number | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const hb = useHailbox({ apiUrl, open, user });
+  const { send } = hb;
 
   useEffect(() => {
-    const onOpen = () => setOpen(true);
-    const onClose = () => setOpen(false);
-    const onToggle = () => setOpen((o) => !o);
+    const onOpen = (event: Event) => {
+      event.preventDefault();
+      setOpen(true);
+    };
+    const onClose = (event: Event) => {
+      event.preventDefault();
+      setOpen(false);
+    };
+    const onToggle = (event: Event) => {
+      event.preventDefault();
+      setOpen((o) => !o);
+    };
+    const onSend = (event: Event) => {
+      if (!(event instanceof CustomEvent) || typeof event.detail !== 'string') return;
+      event.preventDefault();
+      setOpen(true);
+      send(event.detail);
+    };
     window.addEventListener(OPEN_EVENT, onOpen);
     window.addEventListener(CLOSE_EVENT, onClose);
     window.addEventListener(TOGGLE_EVENT, onToggle);
+    window.addEventListener(SEND_EVENT, onSend);
     return () => {
       window.removeEventListener(OPEN_EVENT, onOpen);
       window.removeEventListener(CLOSE_EVENT, onClose);
       window.removeEventListener(TOGGLE_EVENT, onToggle);
+      window.removeEventListener(SEND_EVENT, onSend);
     };
-  }, []);
+  }, [send]);
 
   // Reply notification emails link back with ?hailbox=open.
   useEffect(() => {

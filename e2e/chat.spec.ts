@@ -83,3 +83,11 @@ test('the widget can be opened from page code and from notification email links'
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
+
+test("page code can send a message on the visitor's behalf", async ({ page }) => {
+  await page.goto(`${SITE}/pricing`);
+  await page.getByRole('button', { name: 'Ask about bulk pricing' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Talk to Acme' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Do you offer discounts on bulk orders?')).toBeVisible();
+});

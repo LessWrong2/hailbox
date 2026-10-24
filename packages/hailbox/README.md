@@ -45,8 +45,17 @@ import { openHailbox } from 'hailbox';
 <button onClick={openHailbox}>Contact us</button>;
 ```
 
-`closeHailbox()` and `toggleHailbox()` work the same way. Links with `?hailbox=open` in the URL
-open the panel on load. Reply notification emails use this.
+`closeHailbox()` and `toggleHailbox()` work the same way. Each returns `false` if no `<Hailbox />`
+is mounted to act on, e.g. because you only render it for some visitors. Links with
+`?hailbox=open` in the URL open the panel on load. Reply notification emails use this.
+
+To open the panel and send a message on the visitor's behalf, such as a request your own UI put
+together for them, call `sendHailboxMessage(body)`. It also returns `false`, and sends nothing,
+if no `<Hailbox />` is mounted.
+
+```tsx
+const requested = sendHailboxMessage(`I'd like help with order #${order.id}.`);
+```
 
 ## Signed-in users
 
