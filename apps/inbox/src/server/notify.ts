@@ -16,7 +16,8 @@ export function scheduleReplyNotification(conversationId: string, messageId: num
   background(async () => {
     const delay = notifyDelayMs();
     if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
-    await sendReplyNotificationIfUnread(conversationId, messageId);
+    const outcome = await sendReplyNotificationIfUnread(conversationId, messageId);
+    console.log(`[hailbox] reply notification for message ${messageId} in ${conversationId}: ${outcome}`);
   });
 }
 
