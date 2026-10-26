@@ -156,7 +156,7 @@ export function getBroker(): Broker {
     const url = directDatabaseUrl();
     if (url.includes('-pooler.')) {
       console.warn(
-        '[hailbox] Realtime updates need a direct database connection; LISTEN does not work through a pooler. Set DATABASE_URL_UNPOOLED.',
+        '[hailbox] Realtime updates need a direct database connection; LISTEN does not work through a pooler. DATABASE_URL_UNPOOLED looks pooled.',
       );
     }
     globalForBroker.__hailboxBroker = new PostgresBroker(url);

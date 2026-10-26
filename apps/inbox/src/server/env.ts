@@ -15,10 +15,17 @@ export function databaseUrl(): string {
 
 /**
  * For the realtime broker's LISTEN connection, which doesn't work through a transaction-mode
- * pooler. Neon's Vercel integration sets DATABASE_URL_UNPOOLED alongside the pooled DATABASE_URL.
+ * pooler: LISTEN succeeds, but notifications never arrive. Neon's Vercel integration sets
+ * DATABASE_URL_UNPOOLED alongside the pooled DATABASE_URL. Without it, a Neon pooled URL is
+ * turned into the direct one, whose host is the same minus the "-pooler" suffix.
  */
 export function directDatabaseUrl(): string {
-  return process.env.DATABASE_URL_UNPOOLED || databaseUrl();
+  if (process.env.DATABASE_URL_UNPOOLED) return process.env.DATABASE_URL_UNPOOLED;
+  const url = databaseUrl();
+  if (!url.includes('-pooler.')) return url;
+  const parsed = new URL(url);
+  parsed.hostname = parsed.hostname.replace(/-pooler\./, '.');
+  return parsed.toString();
 }
 
 export function inboxUrl(): string {

@@ -103,8 +103,9 @@ uses it as-is. Sites upgrade by pointing their dependency at the new release's U
    `HAILBOX_MIGRATE_PREVIEWS=1` because each preview has its own database branch.
 2. **Add Postgres** (e.g. Neon) from the Vercel Marketplace and connect it to the project. This
    sets `DATABASE_URL`. Realtime updates also need a direct connection, because `LISTEN` doesn't
-   work through a connection pooler. Neon's integration sets `DATABASE_URL_UNPOOLED` for this. With
-   another provider, set `DATABASE_URL_UNPOOLED` yourself if `DATABASE_URL` is pooled.
+   work through a connection pooler. Neon's integration sets `DATABASE_URL_UNPOOLED` for this, and
+   if it's missing, the inbox derives it from a Neon pooled `DATABASE_URL`. With another provider,
+   set `DATABASE_URL_UNPOOLED` yourself if `DATABASE_URL` is pooled.
 3. **Set environment variables** (all are listed in `apps/inbox/.env.example`):
    - `HAILBOX_SECRET`: a long random string (`openssl rand -base64 32`).
    - `OPERATOR_EMAILS`: comma-separated addresses allowed to sign in.
