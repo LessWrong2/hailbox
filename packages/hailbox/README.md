@@ -18,8 +18,9 @@ import { Hailbox } from 'hailbox';
 ```
 
 Render it once, near the root of your app (e.g. in a Next.js root layout). It's a client
-component that renders into a shadow root, so your site's CSS won't affect it and its CSS won't
-leak into your site.
+component. The chat panel renders into a shadow root, so your site's CSS won't affect it and its
+CSS won't leak into your site. The launcher button is the exception: it's part of your page, so
+you can restyle it (see [Styling the launcher](#styling-the-launcher)).
 
 ## Props
 
@@ -29,12 +30,33 @@ leak into your site.
 | `title`       | `string`                        | `"Chat with us"` | Panel heading.                                                              |
 | `subtitle`    | `string`                        |                  | Smaller line under the heading, e.g. expected response time.               |
 | `greeting`    | `string`                        |                  | Shown as the first message. Not stored or sent anywhere.                   |
-| `color`       | `string`                        | `#4f46e5`        | Accent color for the launcher, header and visitor messages. Text on it is white. |
+| `color`       | `string`                        | `#4f46e5`        | Accent color for the header, visitor messages and launcher icon. Text on it is white. |
 | `position`    | `"right" \| "left"`             | `"right"`        | Which corner the launcher sits in.                                          |
 | `colorScheme` | `"light" \| "dark" \| "auto"`   | `"light"`        | `"auto"` follows the visitor's OS setting.                                  |
 | `user`        | `{ name?, email? } \| null`     |                  | Your signed-in user. Prefills their email, and ties the stored conversation to them (see below). |
 | `askForEmail` | `boolean`                       | `true`           | After their first message, offer to email the visitor when someone replies. |
 | `zIndex`      | `number`                        | `2147483000`     | Stacking order of the launcher and panel.                                   |
+
+## Styling the launcher
+
+The launcher is a white, round `<button class="hailbox-launcher">` fixed to the bottom corner of
+the page. Its unread count is a `<span class="hailbox-badge">` inside it. The widget inserts its
+default styles for these at the start of `<head>`, so your own rules for the same classes take
+precedence:
+
+```css
+.hailbox-launcher {
+  bottom: 32px;
+  background: #111827;
+  color: #fff;
+}
+```
+
+The button also has `data-open`, `data-position` and `data-scheme` attributes matching the
+widget's state and props. The panel doesn't follow the launcher if you move it, so keep it near
+the corner. A site-wide reset that targets `[type="button"]` (Tailwind v3's preflight does this)
+can also override the defaults. If it does, restore them with a more specific rule, such as
+`button.hailbox-launcher { background: #fff; }`.
 
 ## Opening the panel from your own UI
 

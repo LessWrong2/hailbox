@@ -10,7 +10,7 @@ import {
 import { createPortal } from 'react-dom';
 import { ChatIcon, ChevronDownIcon, CloseIcon, SendIcon } from './icons';
 import { MAX_MESSAGE_LENGTH } from './protocol';
-import { widgetCss } from './styles';
+import { launcherCss, widgetCss } from './styles';
 import { formatTime, Linkified } from './text';
 import { RESET_EVENT, useHailbox, type DisplayMessage, type HailboxUser } from './useHailbox';
 
@@ -23,7 +23,7 @@ export interface HailboxProps {
   subtitle?: string;
   /** Shown as the first message in the conversation. Not stored or sent anywhere. */
   greeting?: string;
-  /** Accent color for the launcher, header and the visitor's messages. Pick one white text reads well on. */
+  /** Accent color for the header, the visitor's messages and the launcher's icon. Pick one white text reads well on. */
   color?: string;
   position?: 'right' | 'left';
   colorScheme?: 'light' | 'dark' | 'auto';
@@ -84,27 +84,43 @@ export function resetHailbox(): void {
   window.dispatchEvent(new Event(RESET_EVENT));
 }
 
+const LAUNCHER_CSS_ID = 'hailbox-launcher-css';
+
+function installLauncherCss() {
+  let style = document.getElementById(LAUNCHER_CSS_ID);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = LAUNCHER_CSS_ID;
+    document.head.prepend(style);
+  }
+  style.textContent = launcherCss;
+}
+
 /**
  * Floating chat launcher plus panel. Render it once, near the root of your app.
- * It renders into a shadow root so the host page's CSS can't interfere with it.
+ * The panel renders into a shadow root so the host page's CSS can't interfere with it. The
+ * launcher doesn't, so the host page can restyle it through the .hailbox-launcher class.
  */
 export function Hailbox(props: HailboxProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [root, setRoot] = useState<ShadowRoot | null>(null);
 
   useEffect(() => {
+    installLauncherCss();
     const host = hostRef.current;
     if (host) setRoot(host.shadowRoot ?? host.attachShadow({ mode: 'open' }));
   }, []);
 
   return (
-    <div ref={hostRef} data-hailbox="">
-      {root && createPortal(<Widget {...props} />, root)}
+    <div data-hailbox="">
+      <div ref={hostRef} />
+      {root && <Widget {...props} root={root} />}
     </div>
   );
 }
 
 function Widget({
+  root,
   apiUrl,
   title = 'Chat with us',
   subtitle,
@@ -115,7 +131,7 @@ function Widget({
   user,
   askForEmail = true,
   zIndex = 2147483000,
-}: HailboxProps) {
+}: HailboxProps & { root: ShadowRoot }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [dismissedPreviewId, setDismissedPreviewId] = useState<number | null>(null);
@@ -173,46 +189,49 @@ function Widget({
   const style = { '--hb-z': zIndex, ...(color ? { '--hb-accent': color } : {}) } as CSSProperties;
 
   return (
-    <div
-      className="hb"
-      data-scheme={colorScheme}
-      data-position={position}
-      data-open={open}
-      style={style}
-    >
-      <style>{widgetCss}</style>
-      {open && (
-        <Panel
-          hb={hb}
-          title={title}
-          subtitle={subtitle}
-          greeting={greeting}
-          askForEmail={askForEmail}
-          draft={draft}
-          setDraft={setDraft}
-          onClose={close}
-        />
-      )}
-      {preview && (
-        <div className="hb-preview" role="status">
-          <button type="button" className="hb-preview-open" onClick={() => setOpen(true)}>
-            <span className="hb-preview-from">{preview.authorName ?? 'New reply'}</span>
-            <span className="hb-preview-body">{preview.body}</span>
-          </button>
-          <button
-            type="button"
-            className="hb-preview-close"
-            aria-label="Dismiss"
-            onClick={() => setDismissedPreviewId(preview.id)}
-          >
-            <CloseIcon />
-          </button>
-        </div>
+    <>
+      {createPortal(
+        <div className="hb" data-scheme={colorScheme} data-position={position} style={style}>
+          <style>{widgetCss}</style>
+          {open && (
+            <Panel
+              hb={hb}
+              title={title}
+              subtitle={subtitle}
+              greeting={greeting}
+              askForEmail={askForEmail}
+              draft={draft}
+              setDraft={setDraft}
+              onClose={close}
+            />
+          )}
+          {preview && (
+            <div className="hb-preview" role="status">
+              <button type="button" className="hb-preview-open" onClick={() => setOpen(true)}>
+                <span className="hb-preview-from">{preview.authorName ?? 'New reply'}</span>
+                <span className="hb-preview-body">{preview.body}</span>
+              </button>
+              <button
+                type="button"
+                className="hb-preview-close"
+                aria-label="Dismiss"
+                onClick={() => setDismissedPreviewId(preview.id)}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+          )}
+        </div>,
+        root,
       )}
       <button
         ref={launcherRef}
         type="button"
-        className="hb-launcher"
+        className="hailbox-launcher"
+        data-scheme={colorScheme}
+        data-position={position}
+        data-open={open}
+        style={style}
         aria-expanded={open}
         aria-label={
           open ? 'Close chat' : hb.unreadCount > 0 ? `Open chat (${hb.unreadCount} unread)` : 'Open chat'
@@ -221,12 +240,12 @@ function Widget({
       >
         {open ? <ChevronDownIcon /> : <ChatIcon />}
         {!open && hb.unreadCount > 0 && (
-          <span className="hb-badge" aria-hidden="true">
+          <span className="hailbox-badge" aria-hidden="true">
             {hb.unreadCount > 9 ? '9+' : hb.unreadCount}
           </span>
         )}
       </button>
-    </div>
+    </>
   );
 }
 

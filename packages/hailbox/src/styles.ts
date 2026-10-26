@@ -1,4 +1,6 @@
-// Rendered inside the widget's shadow root, so none of this leaks into (or is affected by) the host page.
+const fontStack = `ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+
+// Rendered inside the panel's shadow root, so none of this leaks into (or is affected by) the host page.
 export const widgetCss = /* css */ `
 :host { all: initial; }
 
@@ -13,7 +15,7 @@ export const widgetCss = /* css */ `
   --hb-input-bg: #ffffff;
   --hb-danger: #dc2626;
   --hb-shadow: 0 12px 40px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: ${fontStack};
   font-size: 14px;
   line-height: 1.45;
   color: var(--hb-fg);
@@ -51,47 +53,8 @@ export const widgetCss = /* css */ `
 
 /* Zero-specificity resets, so component classes below always win. */
 :where(.hb) button { font: inherit; color: inherit; cursor: pointer; }
-.hb-launcher, .hb-panel, .hb-preview { z-index: var(--hb-z); }
+.hb-panel, .hb-preview { z-index: var(--hb-z); }
 .hb :focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
-
-/* Launcher */
-.hb-launcher {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: 50%;
-  background: var(--hb-accent);
-  color: var(--hb-accent-fg);
-  box-shadow: var(--hb-shadow);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease;
-}
-.hb-launcher:hover { transform: scale(1.06); }
-.hb-launcher:active { transform: scale(0.96); }
-.hb-launcher svg { width: 24px; height: 24px; }
-.hb[data-position="left"] .hb-launcher { right: auto; left: 20px; }
-
-.hb-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 10px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 20px;
-  text-align: center;
-  box-shadow: 0 0 0 2px var(--hb-bg);
-}
 
 /* Unread preview, shown next to the launcher when a reply arrived while the panel was closed */
 .hb-preview {
@@ -159,7 +122,6 @@ export const widgetCss = /* css */ `
 }
 @media (prefers-reduced-motion: reduce) {
   .hb-panel, .hb-preview { animation: none; }
-  .hb-launcher { transition: none; }
 }
 
 .hb-header {
@@ -336,8 +298,68 @@ export const widgetCss = /* css */ `
     height: auto;
     border-radius: 0;
   }
-  .hb[data-open="true"] .hb-launcher { display: none; }
   /* iOS zooms into inputs smaller than 16px when they're focused. */
   .hb-composer textarea, .hb-email input { font-size: 16px; }
+}
+`;
+
+// The launcher lives in the host page's DOM rather than the shadow root, so sites can restyle it.
+// This is inserted first in <head>, so the host page's own rules for .hailbox-launcher override it.
+export const launcherCss = /* css */ `
+.hailbox-launcher {
+  --hb-accent: #4f46e5;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: var(--hb-z);
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--hb-accent);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.hailbox-launcher:hover { transform: scale(1.06); }
+.hailbox-launcher:active { transform: scale(0.96); }
+.hailbox-launcher:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+.hailbox-launcher svg { display: block; width: 24px; height: 24px; }
+.hailbox-launcher[data-position="left"] { right: auto; left: 20px; }
+
+/* Lets accent colors given as light-dark(...) follow the colorScheme prop rather than the host page. */
+.hailbox-launcher[data-scheme="light"] { color-scheme: light; }
+.hailbox-launcher[data-scheme="dark"] { color-scheme: dark; }
+.hailbox-launcher[data-scheme="auto"] { color-scheme: light dark; }
+
+.hailbox-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  box-sizing: border-box;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #ef4444;
+  color: #fff;
+  font: 600 12px/20px ${fontStack};
+  text-align: center;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hailbox-launcher { transition: none; }
+}
+/* The panel goes full screen here, and has its own close button. */
+@media (max-width: 480px) {
+  .hailbox-launcher[data-open="true"] { display: none; }
 }
 `;
